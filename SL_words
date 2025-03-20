@@ -1,0 +1,86 @@
+import cv2
+import time
+import pyttsx3
+from cvzone.HandTrackingModule import HandDetector
+
+capture = cv2.VideoCapture(0)
+
+hd = HandDetector(maxHands=1, detectionCon=0.8)
+
+engine = pyttsx3.init()
+
+prev_x = None          # Store previous hand x-position for wave detection
+last_greet_time = 0    # Timestamp of the last greeting
+greet_delay = 1.5      # Minimum delay (in seconds) between detections
+
+def detect_sign(hand):
+    fingers = hd.fingersUp(hand)  # Get the state of fingers (1 = up, 0 = down)
+
+    
+    
+    if fingers == [0, 1, 0, 0, 0]:  # Index finger up (Pointing)
+        return "One"
+    elif fingers == [0, 1, 1, 0, 0]:  # Index and middle finger up (Peace/V)
+        return "Two"
+    elif fingers == [0, 1, 1, 1, 0]:  # Index, middle, and ring finger up
+        return "Three"
+    elif fingers == [1, 0, 0, 0, 1]:  # Thumb and pinky up (Call me sign)
+        return "Call"
+    elif fingers == [1, 1, 1, 1, 1]:  # Open palm (Wave detection already implemented)
+        return "Hello"
+    elif fingers == [1, 0, 0, 0, 0]:  # Thumbs up
+        return "Yes"
+    elif fingers == [0, 0, 0, 0, 1]:  # Pinky up
+        return "No"
+    elif fingers == [0, 1, 1, 1, 1]:  # All fingers up except thumb
+        return "Thank You"
+    elif fingers == [1, 0, 0, 1, 1]:  # Thumb, ring, and pinky up
+        return "Love"
+    elif fingers == [1, 1, 0, 0, 0]:  # Thumb and index up (L-shape)
+        return "Danger"
+    elif fingers == [0, 1, 0, 1, 1]:  # Index, ring, and pinky up
+        return "Fire"
+    elif fingers == [1, 1, 1, 0, 0]:  # Thumb, index, and middle up
+        return "Water"
+    return None
+
+while True:
+    ret, frame = capture.read()
+    if not ret:
+        print("Failed to capture image")
+        break
+
+    frame = cv2.flip(frame, 1)  # Mirror effect
+    hands, _ = hd.findHands(frame, draw=True, flipType=False)  # Detect hands
+
+    if hands:  # If a hand is detected
+        hand = hands[0]  # Use the first detected hand
+        sign = detect_sign(hand)  # Detect the sign language gesture
+
+        if 'bbox' in hand:
+            x, y, w, h = hand['bbox']
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
+
+        cx, cy = hand['center']
+        if prev_x is not None:
+            movement = abs(cx - prev_x)
+            if movement > 50 and (time.time() - last_greet_time) > greet_delay:
+                sign = "Hello"
+        
+        if sign and (time.time() - last_greet_time) > greet_delay:
+            cv2.putText(frame, sign, (x, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+            engine.say(sign)
+            engine.runAndWait()
+            last_greet_time = time.time()
+        
+        prev_x = cx  
+    else:
+        prev_x = None
+
+    cv2.imshow("Webcam Feed", frame)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+capture.release()
+cv2.destroyAllWindows()
