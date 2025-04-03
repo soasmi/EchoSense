@@ -9,40 +9,46 @@ hd = HandDetector(maxHands=1, detectionCon=0.8)
 
 engine = pyttsx3.init()
 
-prev_x = None          # Store previous hand x-position for wave detection
-last_greet_time = 0    # Timestamp of the last greeting
-greet_delay = 1.5      # Minimum delay (in seconds) between detections
+prev_x = None          
+last_greet_time = 0    
+greet_delay = 1.5
 
 def detect_sign(hand):
-    fingers = hd.fingersUp(hand)  # Get the state of fingers (1 = up, 0 = down)
+    fingers = hd.fingersUp(hand)  
 
-    
-    
-    if fingers == [0, 1, 0, 0, 0]:  # Index finger up (Pointing)
-        return "One"
-    elif fingers == [0, 1, 1, 0, 0]:  # Index and middle finger up (Peace/V)
-        return "Two"
-    elif fingers == [0, 1, 1, 1, 0]:  # Index, middle, and ring finger up
-        return "Three"
-    elif fingers == [1, 0, 0, 0, 1]:  # Thumb and pinky up (Call me sign)
-        return "Call"
-    elif fingers == [1, 1, 1, 1, 1]:  # Open palm (Wave detection already implemented)
-        return "Hello"
-    elif fingers == [1, 0, 0, 0, 0]:  # Thumbs up
-        return "Yes"
-    elif fingers == [0, 0, 0, 0, 1]:  # Pinky up
-        return "No"
-    elif fingers == [0, 1, 1, 1, 1]:  # All fingers up except thumb
-        return "Thank You"
-    elif fingers == [1, 0, 0, 1, 1]:  # Thumb, ring, and pinky up
-        return "Love"
-    elif fingers == [1, 1, 0, 0, 0]:  # Thumb and index up (L-shape)
-        return "Danger"
-    elif fingers == [0, 1, 0, 1, 1]:  # Index, ring, and pinky up
-        return "Fire"
-    elif fingers == [1, 1, 1, 0, 0]:  # Thumb, index, and middle up
-        return "Water"
-    return None
+    gesture_map = {
+        (0, 1, 0, 0, 0): "One",
+        (0, 1, 1, 0, 0): "Two",
+        (0, 1, 1, 1, 0): "Three",
+        (1, 0, 0, 0, 1): "Call",
+        (1, 1, 1, 1, 1): "Hello",
+        (1, 0, 0, 0, 0): "Yes",
+        (0, 0, 0, 0, 1): "No",
+        (0, 1, 1, 1, 1): "Thank You",
+        (1, 0, 0, 1, 1): "Love",
+        (1, 1, 0, 0, 0): "Danger",
+        (0, 1, 0, 1, 1): "Fire",
+        (1, 1, 1, 0, 0): "Water",
+        (0, 1, 0, 0, 1): "Rock",
+        (1, 1, 1, 1, 0): "High Five",
+        (1, 1, 0, 1, 0): "Good Luck",
+        (1, 0, 1, 1, 1): "Victory",
+        (1, 0, 1, 0, 1): "Magic",
+        (0, 0, 1, 1, 1): "Salute",
+        (1, 0, 0, 1, 0): "Okay",
+        (0, 1, 0, 1, 0): "Stop",
+        (1, 1, 0, 1, 1): "Peace",
+        (0, 1, 1, 0, 1): "Help",
+        (1, 1, 1, 1, 1): "Welcome",
+        (1, 1, 0, 1, 1): "Live Long",
+        (0, 0, 1, 1, 0): "Fist Bump",
+        (1, 1, 1, 0, 1): "Power",
+        (1, 0, 1, 1, 0): "Clap",
+        (0, 1, 1, 1, 0): "Pray",
+        (1, 0, 1, 0, 0): "Punch"
+    }
+
+    return gesture_map.get(tuple(fingers), None)
 
 while True:
     ret, frame = capture.read()
@@ -50,12 +56,12 @@ while True:
         print("Failed to capture image")
         break
 
-    frame = cv2.flip(frame, 1)  # Mirror effect
-    hands, _ = hd.findHands(frame, draw=True, flipType=False)  # Detect hands
+    frame = cv2.flip(frame, 1)  
+    hands, _ = hd.findHands(frame, draw=True, flipType=False)  
 
-    if hands:  # If a hand is detected
-        hand = hands[0]  # Use the first detected hand
-        sign = detect_sign(hand)  # Detect the sign language gesture
+    if hands:  
+        hand = hands[0]  
+        sign = detect_sign(hand)  
 
         if 'bbox' in hand:
             x, y, w, h = hand['bbox']
