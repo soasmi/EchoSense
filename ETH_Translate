@@ -1,0 +1,47 @@
+import speech_recognition as sr
+import pyttsx3
+from googletrans import Translator
+from gtts import gTTS
+import io
+import pygame
+
+# Initialize pygame mixer for audio playback
+pygame.mixer.init()
+
+def speak(text, lang='en'):
+    if lang == 'en':
+        engine = pyttsx3.init()
+        engine.say(text)
+        engine.runAndWait()
+    else:
+        tts = gTTS(text=text, lang=lang)
+        audio_data = io.BytesIO()
+        tts.write_to_fp(audio_data)
+        audio_data.seek(0)
+        
+        pygame.mixer.music.load(audio_data)
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            continue
+
+def recognize_speech():
+    recognizer = sr.Recognizer()
+    translator = Translator()
+    with sr.Microphone() as source:
+        print("Listening...")
+        recognizer.adjust_for_ambient_noise(source)
+        try:
+            audio = recognizer.listen(source)
+            text = recognizer.recognize_google(audio)
+            print("You said:", text)
+            translated_text = translator.translate(text, dest='hi').text
+            print("Translated to Hindi:", translated_text)
+            speak(translated_text, lang='hi')
+        except sr.UnknownValueError:
+            print("Sorry, I could not understand the audio.")
+        except sr.RequestError:
+            print("Could not request results. Please check your internet connection.")
+
+if __name__ == "__main__":
+    while True:
+        recognize_speech()
